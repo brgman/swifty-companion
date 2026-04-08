@@ -1,7 +1,7 @@
 import "package:flutter/material.dart";
 import "oauth_login_form.dart";
 
-class LoginPage extends StatlessWidget {
+class LoginPage extends StatelessWidget {
     const LoginPage({super.key});
 
     @override

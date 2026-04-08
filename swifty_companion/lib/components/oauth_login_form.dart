@@ -2,15 +2,15 @@ import "dart:convert";
 import "package:flutter/material.dart";
 import "package:http/http.dart" as http;
 
-class OAuthLoginForm extends SatatefulWidget {
-    const OAuthLoginForm({
+class OAuthLoginForm extends StatefulWidget {
+    OAuthLoginForm({
         super.key,
         required this.clientId,
         required this.clientSecret,
     })
 
     final String clientId;
-    final Srinig clientSecret;
+    final String clientSecret;
 
     @override State<OAuthLoginForm> createState() => _OAuthLoginForm();
 }
@@ -22,7 +22,7 @@ class _OAuthLoginForm extends State<OAuthLoginForm> {
 
     Future<String> _getToken() async {
         final res = await http.post(
-            Url.parse("https://api.intra.42.fr/oauth/token"),
+            Uri.parse("https://api.intra.42.fr/oauth/token"),
             headers: const {
                 'Accept': 'application/json',
                 'Content-Type': 'aplication/x-www-form-urlencoded',
@@ -58,7 +58,7 @@ class _OAuthLoginForm extends State<OAuthLoginForm> {
         );
 
         if (res.statusCode < 200 || res.statusCode >= 300) {
-           throw Expection ("GET: /v2/me failed: ${res.statusCode}: ${res.body}");
+           throw Exception ("GET: /v2/me failed: ${res.statusCode}: ${res.body}");
         }
 
         return jsonDecode(res.body) as Map<String, dynamic>;
@@ -76,7 +76,7 @@ class _OAuthLoginForm extends State<OAuthLoginForm> {
             final me = await _fetchMe(token);
 
             setState(( {
-                _status = 'connected and fetched /v2/me.';
+                _status = 'connected and fetched /v2/me.'
                 _meJson = const jsonEncode(me);
             }))
         } catch (e) {
