@@ -90,4 +90,40 @@ class _OAuthLoginForm extends State<OAuthLoginForm> {
         }
     }
 
+    @override
+    Widget build(BuildContext context) {
+        return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+                ElevatedButton(
+                    onPressed: _loading ? null : _connect,
+                    child: _loading 
+                        ? const Text('Loading...')
+                        : const Text('Fetch me')
+                )
+
+                if (_status != null) ...[
+                    const SizedBox(height: 12),
+                    Text(_status!, 
+                        style: TextStyle(
+                            color: _status!.startWith('Connected') 
+                                ? Colors.green
+                                : Colors.red
+                        )
+                    )
+                ]
+
+                if (_meJson != null) ...[
+                    const SizedBox(height: 12),
+                    const Text('Response: '),
+                    const SizedBox(height: 6),
+                    Container(
+                        padding: const EdgeInsets.all(12),
+                        color: Colors.black12,
+                        child: Text(_meJson!, style: const TextStyle(fontFamily: 'monospace')),
+                    ),
+                ],
+            ],
+        );
+    }
 }
