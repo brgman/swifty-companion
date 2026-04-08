@@ -40,5 +40,25 @@ class _OAuthLoginForm extends State<OAuthLoginForm> {
 
         final json = jsonDecode(res.body) as Map<String, dynamic>;
         final token = json['access_token'] as String?;
+        
+        if (token == null || token.isEmpty) {
+            throw Exception("No access_token is reponde: ${res.body}");
+        }
+
+        return token;
+    }
+
+    Future<Map<String, dynamic>> _fetchMe(String accessToken) async {
+        final res = await http.get(
+            Uri.parse('https://api.intra.42.fr/v2/me')
+        ),
+        headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $accessToken',
+        },
+    };
+
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+        throw Expection ("GET: /v2/me failed: ${res.statusCode}: ${res.body}");
     }
 }
