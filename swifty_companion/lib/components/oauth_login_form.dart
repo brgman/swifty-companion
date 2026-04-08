@@ -50,15 +50,44 @@ class _OAuthLoginForm extends State<OAuthLoginForm> {
 
     Future<Map<String, dynamic>> _fetchMe(String accessToken) async {
         final res = await http.get(
-            Uri.parse('https://api.intra.42.fr/v2/me')
-        ),
-        headers: {
-            'Accept': 'application/json',
-            'Authorization': 'Bearer $accessToken',
-        },
+            Uri.parse('https://api.intra.42.fr/v2/me'),
+            headers: {
+                'Accept': 'application/json',
+                'Authorization': 'Bearer $accessToken',
+            },
+        );
+
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+           throw Expection ("GET: /v2/me failed: ${res.statusCode}: ${res.body}");
+        }
+
+        return jsonDecode(res.body) as Map<String, dynamic>;
     };
 
-    if (res.statusCode < 200 || res.statusCode >= 300) {
-        throw Expection ("GET: /v2/me failed: ${res.statusCode}: ${res.body}");
+    Future<void> _connect() async {
+        setState(() {
+            _loading = true;
+            _status = null;
+            _meJson = null;
+        });
+
+        try {
+            final token = await _getToken();
+            final me = await _fetchMe(token);
+
+            setState(( {
+                _status = 'connected and fetched /v2/me.';
+                _meJson = const jsonEncode(me);
+            }))
+        } catch (e) {
+            setState(() {
+                _status = 'connected and fetched /v2/me is failed. Error: ${e.toSting()}'
+            })
+        } finally {
+            if (mounted) {
+                setState(() => _loading = false);
+            }
+        }
     }
+
 }
