@@ -1,0 +1,37 @@
+[
+    {
+        "id": 177543,
+        "email": "abergman@student.42.fr",
+        "login": "abergman",
+        "first_name": "Aaron",
+        "last_name": "Bergman",
+        "usual_full_name": "Aaron Bergman",
+        "usual_first_name": "Aaron",
+        "url": "https://api.intra.42.fr/v2/users/abergman",
+        "phone": "hidden",
+        "displayname": "Aaron Bergman",
+        "kind": "student",
+        "image": {
+            "link": "https://cdn.intra.42.fr/users/932073df2570926fdc1f927cb45f0dd5/abergman.jpg",
+            "versions": {
+                "large": "https://cdn.intra.42.fr/users/607ec2f60fdbda424b64808d611cf17d/large_abergman.jpg",
+                "medium": "https://cdn.intra.42.fr/users/b451991403a62211e5d780221daaabc7/medium_abergman.jpg",
+                "small": "https://cdn.intra.42.fr/users/ffd6439cd9fc47271fed6267900344e4/small_abergman.jpg",
+                "micro": "https://cdn.intra.42.fr/users/612a1d0886c143ee8c656e269cb86b83/micro_abergman.jpg"
+            }
+        },
+        "staff?": false,
+        "correction_point": 0,
+        "pool_month": "february",
+        "pool_year": "2024",
+        "location": "f2r6s3",
+        "wallet": 640,
+        "anonymize_date": "2029-04-09T00:00:00.000+02:00",
+        "data_erasure_date": "2029-04-09T00:00:00.000+02:00",
+        "created_at": "2024-02-01T11:31:50.891Z",
+        "updated_at": "2026-04-09T06:03:37.241Z",
+        "alumnized_at": null,
+        "alumni?": false,
+        "active?": true
+    }
+]

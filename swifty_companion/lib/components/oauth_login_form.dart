@@ -22,6 +22,7 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
   String? _status;
   Map<String, dynamic>? _meJson;
   String? _meJsonText;
+  String? _username;
 
   Future<String> _getToken() async {
     final res = await http.post(
@@ -48,26 +49,36 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
       throw Exception('No access_token in response: ${res.body}');
     }
 
+    debugPrint('jsonMap=${jsonMap}');
     return token;
   }
 
   Future<Map<String, dynamic>> _fetchMe(String accessToken) async {
     final res = await http.get(
       Uri.parse('https://api.intra.42.fr/v2/users')
-        .replace(queryParameters: {'filter[login]': 'abergman'}),
+        .replace(queryParameters: {'filter[login]': _username}),
       headers: {
         'Accept': 'application/json',
         'Authorization': 'Bearer $accessToken',
       },
     );
 
-    //  debugPrint('me_res=${res.body}');
+    debugPrint('me_res=${res.body}');
 
     if (res.statusCode < 200 || res.statusCode >= 300) {
       throw Exception('GET /v2/me failed: ${res.statusCode}: ${res.body}');
     }
 
+    if (res.body.isEmpty) {
+        // API returned no content; treat as "not found"
+        return <String, dynamic>{};
+    }
+
     final decoded = jsonDecode(res.body);
+
+    if (decoded is List) {
+        if (decoded.isEmpty) return <String, dynamic>{};
+    }
 
     if (decoded is List && decoded.isNotEmpty && decoded.first is Map) {
         return Map<String, dynamic>.from(decoded.first as Map);
@@ -112,9 +123,22 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+          child: TextField(
+            decoration: const InputDecoration(
+              border: UnderlineInputBorder(),
+              labelText: 'Enter your username',
+            ),
+            onChanged: (String value) {
+                setState(() => _username = value);
+                debugPrint("_username=$_username");
+            }
+          ),
+        ),
         ElevatedButton(
           onPressed: _loading ? null : _connect,
-          child: Text(_loading ? 'Loading...' : 'Fetch me'),
+          child: Text(_loading ? 'Loading...' : 'Fetch'),
         ),
         if (_status != null) ...[
           const SizedBox(height: 12),
