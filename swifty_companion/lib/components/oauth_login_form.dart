@@ -20,7 +20,7 @@ class OAuthLoginForm extends StatefulWidget {
 class _OAuthLoginFormState extends State<OAuthLoginForm> {
   bool _loading = false;
   String? _status;
-  List<dynamic>? _meJson;
+  Map<String, dynamic>? _meJson;
   String? _meJsonText;
 
   Future<String> _getToken() async {
@@ -61,13 +61,19 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
       },
     );
 
-     debugPrint('me_res=${res.body}');
+    //  debugPrint('me_res=${res.body}');
 
     if (res.statusCode < 200 || res.statusCode >= 300) {
       throw Exception('GET /v2/me failed: ${res.statusCode}: ${res.body}');
     }
 
-    return jsonDecode(res.body) as Map<String, dynamic>;
+    final decoded = jsonDecode(res.body);
+
+    if (decoded is List && decoded.isNotEmpty && decoded.first is Map) {
+        return Map<String, dynamic>.from(decoded.first as Map);
+    }
+
+    throw Exception('Unexpected /v2/me response: ${decoded.runtimeType} ${res.body}');
   }
 
   Future<void> _connect() async {
@@ -85,8 +91,8 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
 
       setState(() {
         _status = 'Connected and fetched /v2/me.';
-        _meJson = me as List<dynamic>;
-        _meJsonText = const JsonEncoder.withIndent('  ').convert(_meJson);
+        _meJson = me;
+        _meJsonText = const JsonEncoder.withIndent('  ').convert(me);
     });
     } catch (e) {
       setState(() {
