@@ -41,7 +41,10 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
   }
 
   Future<String> _waitForOAuthCode() async {
-    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, _callbackPort);
+    final server = await HttpServer.bind(
+      InternetAddress.loopbackIPv4,
+      _callbackPort,
+    );
 
     final completer = Completer<String>();
 
@@ -53,7 +56,9 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
       request.response
         ..statusCode = 200
         ..headers.contentType = ContentType.html
-        ..write('<html><body>You can close this tab and go back to the app.</body></html>');
+        ..write(
+          '<html><body>You can close this tab and go back to the app.</body></html>',
+        );
       await request.response.close();
 
       await server.close(force: true);
@@ -64,7 +69,9 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
       }
 
       if (code == null || code.isEmpty) {
-        completer.completeError(Exception('No "code" in callback URL: ${request.uri}'));
+        completer.completeError(
+          Exception('No "code" in callback URL: ${request.uri}'),
+        );
         return;
       }
 
@@ -119,7 +126,9 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
     _accessToken = token;
 
     if (expiresIn != null && expiresIn > 10) {
-      _accessTokenExpiresAt = DateTime.now().add(Duration(seconds: expiresIn - 10));
+      _accessTokenExpiresAt = DateTime.now().add(
+        Duration(seconds: expiresIn - 10),
+      );
     } else if (expiresIn != null) {
       _accessTokenExpiresAt = DateTime.now().add(Duration(seconds: expiresIn));
     } else {
@@ -165,7 +174,9 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
       return Map<String, dynamic>.from(decoded.first as Map);
     }
 
-    throw Exception('Unexpected /v2/me response: ${decoded.runtimeType} ${res.body}');
+    throw Exception(
+      'Unexpected /v2/me response: ${decoded.runtimeType} ${res.body}',
+    );
   }
 
   Future<void> _connect() async {
@@ -204,7 +215,7 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
       children: [
         ElevatedButton(
           onPressed: _loading ? null : _connect,
-          child: Text(_loading ? 'Loading...' : 'Login with 42'),
+          child: Text(_loading ? 'Loading...' : 'Login with 42 API :)(:)'),
         ),
         if (_status != null) ...[
           const SizedBox(height: 12),

@@ -1,0 +1,15 @@
+services:
+  swifty-companion:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "4444:8080"
+      - "4445:8081"
+    volumes:
+          - .:/app
+          - /app/.dart_tool
+          - /app/build
+    stdin_open: true
+    tty: true            # ← 
+    restart: unless-stopped
