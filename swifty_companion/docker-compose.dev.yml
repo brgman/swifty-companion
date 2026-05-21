@@ -2,7 +2,7 @@ services:
   swifty-companion:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     ports:
       - "4444:8080"
       - "4445:8081"
