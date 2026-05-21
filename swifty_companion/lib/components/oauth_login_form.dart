@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+import 'user.dart';
 
 class OAuthLoginForm extends StatefulWidget {
   const OAuthLoginForm({
@@ -166,15 +167,16 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
             textAlign: TextAlign.center,
           ),
         ],
-        if (_meJsonText != null) ...[
-          const SizedBox(height: 16),
-          const Text('User Data:'),
-          Container(
-            padding: const EdgeInsets.all(12),
-            color: Colors.black12,
-            child: Text(_meJsonText!, style: const TextStyle(fontFamily: 'monospace')),
-          ),
-        ],
+        
+        if (_meJson != null) ...[
+        const SizedBox(height: 24),
+        const Divider(thickness: 1),
+        const SizedBox(height: 16),
+        
+        Expanded(                    // ← Важно!
+          child: UserPage(userData: _meJson!),
+        ),
+      ],
       ],
     );
   }
