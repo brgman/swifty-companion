@@ -46,8 +46,40 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     final clientId = dotenv.get('CLIENT_ID');
     final clientSecret = dotenv.get('CLIENT_SECRET');
+    final displayName = userData?['usual_full_name'] as String? ?? "";
+    final imageUrl = userData?['image']?['link'] as String? ?? '';
      
     return Scaffold(
+      appBar: AppBar(
+        title: Row(
+          children: [
+            CircleAvatar(
+              radius: 22,
+              backgroundColor: Colors.grey[200],
+              backgroundImage: imageUrl.isNotEmpty
+                ? NetworkImage(imageUrl)
+                : const AssetImage('logo.png'),
+                ),
+            SizedBox(width: 12),
+            Text(displayName),
+          ],
+        ),
+        actions: [
+          TextButton.icon(
+            onPressed: () {
+              print('User logged out');
+            },
+            icon: const Icon(Icons.logout, color: Colors.white),
+            label: const Text(
+              'Logout',
+              style: TextStyle(color: Colors.white, fontSize: 16),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+        backgroundColor: Colors.black,
+        elevation: 2,
+      ),
       body: isLoggedIn && userData != null
           ? UserPage(userData: userData!)
           : OAuthLoginForm(
