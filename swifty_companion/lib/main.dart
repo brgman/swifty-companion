@@ -61,10 +61,10 @@ class _MainPageState extends State<MainPage> {
                 : const AssetImage('logo.png'),
                 ),
             SizedBox(width: 12),
-            Text(displayName),
+            Text(imageUrl.isNotEmpty ? displayName : "abermgan/swifty-companion"),
           ],
         ),
-        actions: [
+        actions:  imageUrl.isNotEmpty ? [
           TextButton.icon(
             onPressed: () {
               print('User logged out');
@@ -76,7 +76,7 @@ class _MainPageState extends State<MainPage> {
             ),
           ),
           const SizedBox(width: 8),
-        ],
+        ] : [],
         backgroundColor: Colors.black,
         elevation: 2,
       ),
