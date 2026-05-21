@@ -1,3 +1,4 @@
+import 'dart:convert';
 import "package:flutter/material.dart";
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import "oauth_login_form.dart";
@@ -14,11 +15,13 @@ class UserPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final imageUrl = userData['image']?['link'] as String? ?? '';
     final login = userData['login'] as String? ?? 'Unknown';
-    final displayName = userData['displayname'] as String? ?? login;
+    final displayName = userData['usual_full_name'] as String? ?? login;
     final email = userData['email'] as String? ?? '';
     final phone = userData['phone'] as String? ?? 'Not provided';
     final location = userData['location'] as String? ?? 'No location';
     final correctionPoint = userData['correction_point'] ?? 0;
+
+    // debugPrint(const JsonEncoder.withIndent('  ').convert(userData));
 
     return Scaffold(
       appBar: AppBar(
@@ -53,12 +56,6 @@ class UserPage extends StatelessWidget {
               style: const TextStyle(fontSize: 18, color: Colors.grey),
             ),
 
-            const SizedBox(height: 32),
-
-            const Text(
-              "User data from json",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
             const SizedBox(height: 12),
             _buildInfoRow(Icons.email, "Email", email),
             _buildInfoRow(Icons.phone, "Phone", phone),

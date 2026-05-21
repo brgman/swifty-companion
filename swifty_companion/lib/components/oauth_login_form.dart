@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'user.dart';
+import 'package:flutter/foundation.dart'; // for kIsWeb
+import 'dart:html' as html_tree;   // ← Add this line
 
 class OAuthLoginForm extends StatefulWidget {
   const OAuthLoginForm({
@@ -61,6 +63,21 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
     }
   }
 
+  void _cleanUrl() {
+    if (!kIsWeb) return;
+
+    try {
+      final cleanUri = Uri.base.replace(queryParameters: {});
+      html_tree.window.history.replaceState(
+        null, 
+        '', 
+        cleanUri.toString(),
+      );
+    } catch (e) {
+      debugPrint('Failed to clean URL: $e');
+    }
+  }
+
   Future<void> _openBrowserForLogin() async {
     final uri = Uri.parse('https://api.intra.42.fr/oauth/authorize').replace(
       queryParameters: {
@@ -104,6 +121,7 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
       }
 
       setState(() => _accessToken = token);
+      _cleanUrl();
 
       // Fetch user data
       final me = await _fetchMe(token);
@@ -126,6 +144,8 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
     );
 
     if (res.statusCode >= 300) throw Exception('Failed to fetch /me');
+
+    debugPrint(res.body);
 
     return jsonDecode(res.body) as Map<String, dynamic>;
   }
