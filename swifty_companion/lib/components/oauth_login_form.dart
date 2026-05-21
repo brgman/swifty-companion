@@ -6,17 +6,19 @@ import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'user.dart';
 import 'package:flutter/foundation.dart'; // for kIsWeb
-import 'dart:html' as html_tree;   // ← Add this line
+import 'dart:html' as html_tree;
 
 class OAuthLoginForm extends StatefulWidget {
   const OAuthLoginForm({
     super.key,
     required this.clientId,
     required this.clientSecret,
+    required this.onLoginSuccess,
   });
 
   final String clientId;
   final String clientSecret;
+  final Function(Map<String, dynamic>)? onLoginSuccess;
 
   @override
   State<OAuthLoginForm> createState() => _OAuthLoginFormState();
@@ -33,7 +35,7 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
   String get _redirectUri {
     if (kIsWeb) {
       final uri = Uri.base;
-      return '${uri.origin}/callback';   // or just uri.origin if you prefer
+      return '${uri.origin}/callback';
     }
     return 'http://localhost:4444/callback';
   }
@@ -175,28 +177,60 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const SizedBox(height: 50),
         ElevatedButton(
           onPressed: _loading ? null : _connect,
-          child: Text(_loading ? 'Loading...' : 'Login with 42'),
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.black,
+            elevation: 3,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                'logo.png',
+                  height: 40,
+                  width: 40,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(Icons.business, size: 40, color: Colors.black);
+                  },
+                ),
+              const SizedBox(width: 12),
+              const Text(
+                'Login with 42',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
         ),
+
         if (_status != null) ...[
           const SizedBox(height: 16),
           Text(
             _status!,
-            style: TextStyle(color: isSuccess ? Colors.green : Colors.red),
+            style: TextStyle(
+              color: isSuccess ? Colors.green : Colors.red,
+              fontSize: 16,
+            ),
             textAlign: TextAlign.center,
           ),
         ],
-        
-        if (_meJson != null) ...[
-        const SizedBox(height: 24),
-        const Divider(thickness: 1),
-        const SizedBox(height: 16),
-        
-        Expanded(                    // ← Важно!
-          child: UserPage(userData: _meJson!),
-        ),
-      ],
+
+        if (_meJson != null && widget.onLoginSuccess != null)
+          Builder(
+            builder: (context) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                widget.onLoginSuccess!(_meJson!);
+              });
+              return const SizedBox.shrink();
+            },
+          ),
       ],
     );
   }

@@ -29,6 +29,7 @@ environment:
 # versions available, run `flutter pub outdated`.
 dependencies:
   flutter_dotenv: ^6.0.1
+  flutter_cors_image: ^0.3.13
   http: ^1.2.0
   flutter:
     sdk: flutter
@@ -64,6 +65,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - .env
+    - logo.png
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 

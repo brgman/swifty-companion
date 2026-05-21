@@ -11,5 +11,5 @@ services:
           - /app/.dart_tool
           - /app/build
     stdin_open: true
-    tty: true            # ← 
+    tty: true
     restart: unless-stopped

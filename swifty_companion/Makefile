@@ -6,6 +6,7 @@ build:
 
 build-dev:
 	docker compose -f docker-compose.dev.yml build --no-cache
+	docker compose -f docker-compose.dev.yml up
 
 prod: build
 	docker compose -f docker-compose.yml up
@@ -18,4 +19,6 @@ re:
 	docker rm swifty_companion_swifty-companion_1
 	docker compose -f docker-compose.dev.yml build --no-cache
 	docker compose -f docker-compose.dev.yml up
-	
+
+migrate:
+	podman system migrate
