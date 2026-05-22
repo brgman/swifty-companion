@@ -33,6 +33,7 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   Map<String, dynamic>? userData;
+  String? token;
   bool isLoggedIn = false;
   final TextEditingController _controller = TextEditingController();
 
@@ -55,10 +56,11 @@ class _MainPageState extends State<MainPage> {
   }
 
   // Функция, которую будем вызывать из LoginPage
-  void onLoginSuccess(Map<String, dynamic> data) {
+  void onLoginSuccess(Map<String, dynamic> data, String accessToken) {
     setState(() {
       userData = data;
       isLoggedIn = true;
+      token = accessToken;
     });
   }
 
@@ -69,6 +71,10 @@ class _MainPageState extends State<MainPage> {
     final displayName = userData?['usual_full_name'] as String? ?? "";
     final imageUrl = userData?['image']?['link'] as String? ?? '';
     final location = userData?['location'] as String? ?? 'abergman';
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      debugPrint('Current token: $token');
+    });
      
     return Scaffold(
       appBar: AppBar(

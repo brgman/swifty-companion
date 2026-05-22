@@ -20,7 +20,7 @@ class SearchWidget extends StatelessWidget {
             child: TextField(
               controller: controller,
               decoration: const InputDecoration(
-                hintText: "Enter username (e.g. abermgan)",
+                hintText: "Enter username (e.g. abergman)",
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.search),
               ),

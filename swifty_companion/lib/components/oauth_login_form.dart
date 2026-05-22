@@ -18,7 +18,7 @@ class OAuthLoginForm extends StatefulWidget {
 
   final String clientId;
   final String clientSecret;
-  final Function(Map<String, dynamic>)? onLoginSuccess;
+  final Function(Map<String, dynamic>, String)? onLoginSuccess;
 
   @override
   State<OAuthLoginForm> createState() => _OAuthLoginFormState();
@@ -90,8 +90,11 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
       },
     );
 
-    final ok = await launchUrl(uri, mode: LaunchMode.platformDefault);
-    if (!ok) throw Exception('Could not open browser');
+    if (kIsWeb) {
+      html_tree.window.location.href = uri.toString();
+    } else {
+      await launchUrl(uri, mode: LaunchMode.platformDefault);
+    }
   }
 
   Future<void> _exchangeCodeForTokenAndStore(String code) async {
@@ -226,7 +229,7 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
           Builder(
             builder: (context) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                widget.onLoginSuccess!(_meJson!);
+                widget.onLoginSuccess!(_meJson!, _accessToken!);
               });
               return const SizedBox.shrink();
             },
