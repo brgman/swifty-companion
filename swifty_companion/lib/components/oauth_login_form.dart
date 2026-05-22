@@ -183,13 +183,12 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
         const SizedBox(height: 50),
         Image.asset(
           'bugs-bunny-looney-tunes.gif',
-          width: 350,
-          height: 350,
+          width: 220,
+          height: 220,
           fit: BoxFit.contain,
         ),
-        const SizedBox(height: 50),
         Padding(
-          padding: const EdgeInsets.all(100.0),
+          padding: const EdgeInsets.all(42.0),
           child: ElevatedButton(
           onPressed: _loading ? null : _connect,
           style: ElevatedButton.styleFrom(

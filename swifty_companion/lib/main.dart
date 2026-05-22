@@ -51,6 +51,7 @@ class _MainPageState extends State<MainPage> {
     final username = _controller.text.trim();
     if (username.isEmpty) return;
 
+  try {
     final res = await http.get(
       Uri.parse('https://api.intra.42.fr/v2/users?filter[login]=$username'),
       headers: {
@@ -82,10 +83,14 @@ class _MainPageState extends State<MainPage> {
     }
 
     debugPrint(res.body);
-
-    // return jsonDecode(res.body) as Map<String, dynamic>;
-
-    
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Erreur with notwork: $e"),
+        backgroundColor: Colors.red,
+      ),
+    );
+}
   }
 
   // Функция, которую будем вызывать из LoginPage
