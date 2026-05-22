@@ -160,7 +160,7 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
     });
 
     try {
-      setState(() => _status = 'Opening 42 login...');
+      setState(() => _status = '');
       await _openBrowserForLogin();
       // On Web, the rest happens in _checkForCallbackInUrl()
     } catch (e) {
@@ -215,7 +215,7 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
           Text(
             _status!,
             style: TextStyle(
-              color: isSuccess ? Colors.green : Colors.red,
+              color: isSuccess ? Colors.green : Colors.white,
               fontSize: 16,
             ),
             textAlign: TextAlign.center,
