@@ -66,6 +66,9 @@ flutter:
   assets:
     - .env
     - logo.png
+    - looney-tunes-telescope.gif
+    - 62d8d8adb0cfd56baad169a4c738af33.gif
+    - bugs-bunny-looney-tunes.gif
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 

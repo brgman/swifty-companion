@@ -36,6 +36,7 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   Map<String, dynamic>? userData;
+  Map<String, dynamic>? searchData;
   String? token;
   bool isLoggedIn = false;
   final TextEditingController _controller = TextEditingController();
@@ -61,21 +62,30 @@ class _MainPageState extends State<MainPage> {
 
     final data = jsonDecode(res.body);
     if (data is List && data.isNotEmpty) {
+      _controller.clear();
       setState(() {
-        userData = data[0] as Map<String, dynamic>;
+        searchData = data[0] as Map<String, dynamic>;
       });
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => UserPage(userData: searchData!),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Erreur: Utilisateur $username non trouvé"),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
 
     debugPrint(res.body);
 
     // return jsonDecode(res.body) as Map<String, dynamic>;
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => UserPage(userData: userData!),
-      ),
-    );
+    
   }
 
   // Функция, которую будем вызывать из LoginPage

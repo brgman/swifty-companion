@@ -35,6 +35,12 @@ class UserPage extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            Image.asset(
+              '62d8d8adb0cfd56baad169a4c738af33.gif', // bugs-bunny-looney-tunes.gif
+              width: 350,
+              height: 350,
+              fit: BoxFit.contain,
+            ),
             Center(
               child: CircleAvatar(
                 radius: 80,

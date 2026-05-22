@@ -181,7 +181,16 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 50),
-        ElevatedButton(
+        Image.asset(
+          'bugs-bunny-looney-tunes.gif',
+          width: 350,
+          height: 350,
+          fit: BoxFit.contain,
+        ),
+        const SizedBox(height: 50),
+        Padding(
+          padding: const EdgeInsets.all(100.0),
+          child: ElevatedButton(
           onPressed: _loading ? null : _connect,
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -212,6 +221,8 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
             ],
           ),
         ),
+        ),
+        
 
         if (_status != null) ...[
           const SizedBox(height: 16),
