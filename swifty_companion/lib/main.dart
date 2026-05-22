@@ -3,6 +3,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '/components/oauth_login_form.dart';
 import '/components/user.dart';
 import '/components/search.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:async';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,9 +46,29 @@ class _MainPageState extends State<MainPage> {
     super.dispose();
   }
 
-  void _search() {
+  Future<void> _search() async {
     final username = _controller.text.trim();
     if (username.isEmpty) return;
+
+    final res = await http.get(
+      Uri.parse('https://api.intra.42.fr/v2/users?filter[login]=$username'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (res.statusCode >= 300) throw Exception('Failed to fetch /user');
+
+    final data = jsonDecode(res.body);
+    if (data is List && data.isNotEmpty) {
+      setState(() {
+        userData = data[0] as Map<String, dynamic>;
+      });
+    }
+
+    debugPrint(res.body);
+
+    // return jsonDecode(res.body) as Map<String, dynamic>;
 
     Navigator.push(
       context,
@@ -61,6 +84,14 @@ class _MainPageState extends State<MainPage> {
       userData = data;
       isLoggedIn = true;
       token = accessToken;
+    });
+  }
+
+  void onLogout() {
+    setState(() {
+      userData = null;
+      isLoggedIn = false;
+      token = null;
     });
   }
 
@@ -103,9 +134,7 @@ class _MainPageState extends State<MainPage> {
         ),
         actions:  imageUrl.isNotEmpty ? [
           TextButton.icon(
-            onPressed: () {
-              print('User logged out');
-            },
+            onPressed: onLogout,
             icon: const Icon(Icons.logout, color: Colors.white),
             label: const Text(
               'Logout',
@@ -117,8 +146,9 @@ class _MainPageState extends State<MainPage> {
         backgroundColor: Colors.black,
         elevation: 2,
       ),
-      body: isLoggedIn && (userData != null)
+      body: isLoggedIn && (userData != null) && (token != null)
           ? SearchWidget(
+            accessToken: token,
             controller: _controller,
             onSearch: _search,
           )

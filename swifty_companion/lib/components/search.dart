@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class SearchWidget extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSearch;
+  final String? accessToken;
 
   const SearchWidget({
     super.key,
     required this.controller,
     required this.onSearch,
+    required this.accessToken,
   });
 
   @override
