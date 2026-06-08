@@ -37,7 +37,7 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   Map<String, dynamic>? userData;
   Map<String, dynamic>? searchData;
-  String? token;
+  String token = "";
   bool isLoggedIn = false;
   final TextEditingController _controller = TextEditingController();
 
@@ -70,7 +70,7 @@ class _MainPageState extends State<MainPage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => UserPage(userData: searchData!),
+          builder: (context) => UserPage(userData: searchData!, token: token),
         ),
       );
     } else {
@@ -106,7 +106,7 @@ class _MainPageState extends State<MainPage> {
     setState(() {
       userData = null;
       isLoggedIn = false;
-      token = null;
+      token = "";
     });
   }
 
