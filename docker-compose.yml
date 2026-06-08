@@ -1,5 +1,0 @@
-services:
-  swifty-companion:
-    build: .
-    ports:
-      - "4444:80"
