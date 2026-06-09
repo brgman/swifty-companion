@@ -20,6 +20,8 @@ class UserPage extends StatefulWidget {
 class _UserPageState extends State<UserPage> {
   late Map<String, dynamic> userData;
   late List<dynamic> skills;
+  late String level;
+  late String campus;
   late String token;
   bool isLoading = true;
   String errorMessage = '';
@@ -28,6 +30,8 @@ class _UserPageState extends State<UserPage> {
   void initState() {
     super.initState();
     skills = [];
+    level = "yy";
+    campus = "";
     token = widget.token;
     userData = Map<String, dynamic>.from(widget.userData);
 
@@ -58,9 +62,11 @@ class _UserPageState extends State<UserPage> {
       if (res.statusCode == 200) {
         final fetchedData = json.decode(res.body) as Map<String, dynamic>;
         
-        debugPrint(const JsonEncoder.withIndent('  ').convert(fetchedData));
+        // debugPrint(const JsonEncoder.withIndent('  ').convert(fetchedData));
 
         List<dynamic> extractedSkills = [];
+        String levelRes = "x";
+        String campusName = "";
         try {
           final cursusUsers = fetchedData['cursus_users'] as List<dynamic>? ?? [];
           final filteredCursus = cursusUsers.where((cursus) {
@@ -71,6 +77,20 @@ class _UserPageState extends State<UserPage> {
           if (filteredCursus.isNotEmpty) {
             final selectedCursus = filteredCursus.first as Map<String, dynamic>;
             extractedSkills = selectedCursus['skills'] as List<dynamic>? ?? [];
+            levelRes = selectedCursus['level'].toString() ?? "1.0";
+            
+            final campusFromCursus = selectedCursus['campus'] as List<dynamic>? ?? [];
+            if (campusFromCursus.isNotEmpty) {
+              campusName = campusFromCursus[0]['name']?.toString() ?? "Unknown";
+            } 
+            else {
+              final campusFromUser = fetchedData['campus'] as List<dynamic>? ?? [];
+              if (campusFromUser.isNotEmpty) {
+                campusName = campusFromUser[0]['name']?.toString() ?? "Unknown";
+              }
+            }
+
+            debugPrint("campusName: ${campusName}");
           } else {
             if (cursusUsers.isNotEmpty) {
               final lastCursus = cursusUsers.last as Map<String, dynamic>;
@@ -84,6 +104,8 @@ class _UserPageState extends State<UserPage> {
         setState(() {
           // userData = fetchedData;
           skills = extractedSkills;
+          level = levelRes;
+          campus = campusName;
           errorMessage = '';
         });
       } else {
@@ -142,13 +164,6 @@ class _UserPageState extends State<UserPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Image.asset(
-              '62d8d8adb0cfd56baad169a4c738af33.gif',
-              width: 350,
-              height: 350,
-              fit: BoxFit.contain,
-            ),
-
             Center(
               child: CircleAvatar(
                 radius: 80,
@@ -172,17 +187,26 @@ class _UserPageState extends State<UserPage> {
             _buildInfoRow(
               Icons.school,
               "Campus",
-              userData['campus']?[0]?['name']?.toString() ?? 'Unknown',
+              campus ?? 'Unknown',
             ),
             _buildInfoRow(
               Icons.money,
               "Wallet",
-              "${userData['wallet'] ?? 0} EURO",
+              "${userData['wallet'] ?? 0} Y",
             ),
             _buildInfoRow(
               Icons.flag,
               "Level",
-              "Level ${userData['level'] ?? 'N/A'}",
+              "${level ?? 'N/A'}",
+            ),
+
+            const SizedBox(height: 24),
+            
+            Image.asset(
+              '62d8d8adb0cfd56baad169a4c738af33.gif',
+              width: 350,
+              height: 350,
+              fit: BoxFit.contain,
             ),
 
             const SizedBox(height: 24),
@@ -236,6 +260,10 @@ class _UserPageState extends State<UserPage> {
   }
 
   Widget _buildSkillChip(String name, double level) {
+    final percentage = (level / 20 * 100).clamp(0.0, 100.0);
+    final int whole = level.floor();
+    final String decimal = (level % 1).toStringAsFixed(2).substring(2);
+
     return Container(
       padding: const EdgeInsets.all(12),
       width: 160,
@@ -271,13 +299,23 @@ class _UserPageState extends State<UserPage> {
             ),
           ),
           const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Level ${level.toStringAsFixed(1)}',
+          Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'level ${whole} - ${decimal}%',
               style: const TextStyle(fontSize: 14, color: Colors.grey),
             ),
-          ),
+            Text(
+              '(${percentage.toStringAsFixed(0)}%)',
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
         ],
       ),
     );
