@@ -1,18 +1,17 @@
 import 'dart:convert';
 import 'package:intl/intl.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../types/Projects.dart';
+import '../services/api_client.dart';
 
 class UserPage extends StatefulWidget {
   const UserPage({
     super.key,
-    required this.token,
+    required this.apiClient,
     required this.userData,
   });
 
-  final String token;
+  final ApiClient apiClient;
   final Map<String, dynamic> userData;
 
   @override
@@ -21,29 +20,23 @@ class UserPage extends StatefulWidget {
 
 class _UserPageState extends State<UserPage> {
   late Map<String, dynamic> userData;
-  late List<dynamic> skills;
-  late List<Project> projectsList;
-  late String level;
-  late String campus;
-  late String token;
+  List<dynamic> skills = [];
+  List<Project> projectsList = [];
+  String level = "0.0";
+  String campus = "";
   bool isLoading = true;
   String errorMessage = '';
 
   @override
   void initState() {
     super.initState();
-    skills = [];
-    projectsList = [];
-    level = "0.0";
-    campus = "";
-    token = widget.token;
     userData = Map<String, dynamic>.from(widget.userData);
 
-    final userId = widget.userData['id'];
+    final userId = userData['id'];
     if (userId != null) {
       _fetchFullUserData(userId);
     } else {
-      isLoading = false;
+      setState(() => isLoading = false);
     }
   }
 
@@ -54,96 +47,77 @@ class _UserPageState extends State<UserPage> {
     });
 
     try {
-      final res = await http.get(
-        Uri.parse('https://api.intra.42.fr/v2/users/$userId'),
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-
-      final response = await http.get(
-        Uri.parse('https://api.intra.42.fr/v2/users/$userId/projects_users?page[size]=100'),
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      // debugPrint("Status Code: ${res.statusCode}");
+      final res = await widget.apiClient.get('/users/$userId');
+      final projectsRes = await widget.apiClient.get('/users/$userId/projects_users?page[size]=100');
 
       if (res.statusCode == 200) {
         final fetchedData = json.decode(res.body) as Map<String, dynamic>;
-        
-        // debugPrint(const JsonEncoder.withIndent('  ').convert(fetchedData));
 
         List<dynamic> extractedSkills = [];
         String levelRes = "x";
         String campusName = "";
-        List<Project> projects = [];
+
         try {
           final cursusUsers = fetchedData['cursus_users'] as List<dynamic>? ?? [];
+
           final filteredCursus = cursusUsers.where((cursus) {
-          final cursusMap = cursus as Map<String, dynamic>;
+            final cursusMap = cursus as Map<String, dynamic>;
             return cursusMap['cursus_id'] == 21;
           }).toList();
 
           if (filteredCursus.isNotEmpty) {
             final selectedCursus = filteredCursus.first as Map<String, dynamic>;
             extractedSkills = selectedCursus['skills'] as List<dynamic>? ?? [];
-            levelRes = selectedCursus['level'].toString() ?? "1.0";
-            
+            levelRes = selectedCursus['level']?.toString() ?? "1.0";
+
             final campusFromCursus = selectedCursus['campus'] as List<dynamic>? ?? [];
             if (campusFromCursus.isNotEmpty) {
               campusName = campusFromCursus[0]['name']?.toString() ?? "Unknown";
-            } 
-            else {
-              final campusFromUser = fetchedData['campus'] as List<dynamic>? ?? [];
-              if (campusFromUser.isNotEmpty) {
-                campusName = campusFromUser[0]['name']?.toString() ?? "Unknown";
-              }
             }
-
-            debugPrint("campusName: ${campusName}");
-          } else {
-            if (cursusUsers.isNotEmpty) {
-              final lastCursus = cursusUsers.last as Map<String, dynamic>;
-              extractedSkills = lastCursus['skills'] as List<dynamic>? ?? [];
-            }
+          } else if (cursusUsers.isNotEmpty) {
+            final lastCursus = cursusUsers.last as Map<String, dynamic>;
+            extractedSkills = lastCursus['skills'] as List<dynamic>? ?? [];
+            levelRes = lastCursus['level']?.toString() ?? "1.0";
           }
 
-          final List<dynamic> projectsJson = json.decode(response.body);
-
-
-        projects = projectsJson
-                .map((project) => Project.fromJson(project as Map<String, dynamic>))
-                .toList();
-
-          projects.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-          debugPrint("projectsList: ${projects}");
-
+          if (campusName.isEmpty) {
+            final campusFromUser = fetchedData['campus'] as List<dynamic>? ?? [];
+            if (campusFromUser.isNotEmpty) {
+              campusName = campusFromUser[0]['name']?.toString() ?? "Unknown";
+            }
+          }
         } catch (e) {
-          debugPrint("Error skills: $e");
+          debugPrint("Error parsing cursus/skills: $e");
+        }
+
+        // === Projects ===
+        List<Project> loadedProjects = [];
+        if (projectsRes.statusCode == 200) {
+          final List<dynamic> projectsJson = json.decode(projectsRes.body);
+          loadedProjects = projectsJson
+              .map((project) => Project.fromJson(project as Map<String, dynamic>))
+              .toList();
+
+          loadedProjects.sort((a, b) => b.createdAt.compareTo(a.createdAt));
         }
 
         setState(() {
-          // userData = fetchedData;
           skills = extractedSkills;
           level = levelRes;
           campus = campusName;
+          projectsList = loadedProjects;
           errorMessage = '';
-          projectsList = projects;
         });
       } else {
         setState(() {
-          errorMessage = "Error: ${res.statusCode}: ${res.body}";
+          errorMessage = "Error ${res.statusCode}";
         });
       }
     } catch (e) {
       setState(() {
         errorMessage = "Error: $e";
       });
-      debugPrint("Error: $e");
+      debugPrint("Fetch error: $e");
     } finally {
       setState(() => isLoading = false);
     }
@@ -158,26 +132,21 @@ class _UserPageState extends State<UserPage> {
     final phone = userData['phone'] as String? ?? 'Not provided';
     final location = userData['location'] as String? ?? 'No location';
     final correctionPoint = userData['correction_point'] ?? 0;
-    final int whole = double.parse(level).floor();
-    final String decimal = (double.parse(level) % 1).toStringAsFixed(2).substring(2);
 
+    final double levelDouble = double.tryParse(level) ?? 0.0;
+    final int whole = levelDouble.floor();
+    final String decimal = (levelDouble % 1).toStringAsFixed(2).substring(2);
 
     if (isLoading) {
-      return Scaffold(
-        appBar: AppBar(title: const Text("Search user")),
-        body: const Center(child: CircularProgressIndicator()),
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (errorMessage.isNotEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text("Search user")),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Text(errorMessage, textAlign: TextAlign.center),
-          ),
-        ),
+        body: Center(child: Text(errorMessage)),
       );
     }
 
@@ -200,15 +169,11 @@ class _UserPageState extends State<UserPage> {
                 child: imageUrl.isEmpty ? const Icon(Icons.person, size: 80) : null,
               ),
             ),
-
             const SizedBox(height: 16),
-            Text(displayName,
-                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center),
-            Text("@$login",
-                style: const TextStyle(fontSize: 18, color: Colors.grey)),
+            Text(displayName, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+            Text("@$login", style: const TextStyle(fontSize: 18, color: Colors.grey)),
+            const SizedBox(height: 20),
 
-            const SizedBox(height: 12),
             _buildInfoRow(Icons.email, "Email", email),
             _buildInfoRow(Icons.phone, "Phone", phone),
             _buildInfoRow(Icons.location_on, "Location", location),
@@ -343,8 +308,8 @@ class _UserPageState extends State<UserPage> {
           ),
           const SizedBox(height: 8),
           Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
             Text(
               'level ${whole} - ${decimal}%',
               style: const TextStyle(fontSize: 14, color: Colors.grey),
@@ -357,14 +322,14 @@ class _UserPageState extends State<UserPage> {
                 fontWeight: FontWeight.w500,
               ),
             ),
-          ],
-        ),
+            ],
+          ),
         ],
       ),
     );
   }
 
-	Widget _buildProjectsContent() {
+  Widget _buildProjectsContent() {
 
     if (projectsList.isEmpty) {
       return const Padding(
@@ -373,21 +338,33 @@ class _UserPageState extends State<UserPage> {
       );
     }
 
-		return Card(
-			color: Colors.white.withOpacity(0.1),
-			child: ListView.builder(
-				padding: const EdgeInsets.all(5),
-				shrinkWrap: true,
+    return Card(
+      color: Colors.white.withOpacity(0.1),
+      child: ListView.builder(
+        padding: const EdgeInsets.all(5),
+        shrinkWrap: true,
 				physics: NeverScrollableScrollPhysics(),
-				itemCount: projectsList.length,
-				itemBuilder: (context, index) {
-					final project = projectsList[index];
-					return ListTile(
-            title: Text(project.name, style: TextStyle(color: (project.finalMark ?? 0) > 100 ? Colors.green : Colors.white,),),
-						subtitle: Text('${project.status == "finished" ? project.finalMark : project.status}       ${project.createdAt}', style: TextStyle(color: Colors.white70)),
-						leading: Icon(Icons.folder, color: (project.finalMark ?? 0) > 100 ? Colors.green : Colors.grey),);
-				},
-			),
-		);
-	}
+        itemCount: projectsList.length,
+        itemBuilder: (context, index) {
+          final project = projectsList[index];
+          return ListTile(
+            title: Text(
+              project.name,
+              style: TextStyle(
+                color: (project.finalMark ?? 0) > 100 ? Colors.green : Colors.white,
+              ),
+            ),
+            subtitle: Text(
+              '${project.status == "finished" ? project.finalMark : project.status} • ${project.formattedCreatedAt}',
+              style: const TextStyle(color: Colors.white70),
+            ),
+            leading: Icon(
+              Icons.folder,
+              color: (project.finalMark ?? 0) > 100 ? Colors.green : Colors.grey,
+            ),
+          );
+        },
+      ),
+    );
+  }
 }
