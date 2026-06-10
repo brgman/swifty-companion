@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'user.dart';
 import 'package:flutter/foundation.dart'; // for kIsWeb
 import 'dart:html' as html_tree;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class OAuthLoginForm extends StatefulWidget {
   const OAuthLoginForm({
@@ -31,6 +32,10 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
   String? _meJsonText;
   String? _accessToken;
 
+  static const String _accessTokenKey = 'access_token';
+  static const String _refreshTokenKey = 'refresh_token';
+  static const String _expiresAtKey = 'expires_at';
+
   // For Web: redirect to the current page
   String get _redirectUri {
     if (kIsWeb) {
@@ -46,9 +51,28 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
     if (kIsWeb) {
       _checkForCallbackInUrl();   // Check if we came back with ?code=...
     }
+    tryAutoLogin();
   }
 
-  // Read code from URL after 42 redirects back
+  Future<void> tryAutoLogin() async {
+    debugPrint("tryAutoLogin");
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(_accessTokenKey);
+    final expiresAt = prefs.getInt(_expiresAtKey) ?? 0;
+
+    if (token != null && DateTime.now().millisecondsSinceEpoch < expiresAt) {
+      final me = await _fetchMe(token);
+      if (me != null) {
+        setState(() {
+          _accessToken = token;
+          _meJson = me;
+          _status = 'Recovery prev session';
+        });
+        widget.onLoginSuccess?.call(me, token);
+      }
+    }
+  }
+
   void _checkForCallbackInUrl() {
     final uri = Uri.base;
     final code = uri.queryParameters['code'];
@@ -120,17 +144,21 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
 
       final jsonMap = jsonDecode(res.body) as Map<String, dynamic>;
       final token = jsonMap['access_token'] as String?;
+      final refreshToken = jsonMap['refresh_token'] as String?;
+      final expiresIn = jsonMap['expires_in'] as int?;
 
       if (token == null || token.isEmpty) {
         throw Exception('No access_token received');
       }
 
-      setState(() => _accessToken = token);
+      await saveTokens(token, refreshToken, expiresIn ?? 7200);
+
       _cleanUrl();
 
       // Fetch user data
       final me = await _fetchMe(token);
       setState(() {
+        _accessToken = token;
         _status = 'Connected successfully!';
         _meJson = me;
         _meJsonText = const JsonEncoder.withIndent('  ').convert(me);
@@ -138,6 +166,54 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
     } catch (e) {
       setState(() => _status = 'Error: $e');
     }
+  }
+
+  Future<void> saveTokens(String accessToken, String? refreshToken, int expiresIn) async {
+    debugPrint("saveTokens");
+    final prefs = await SharedPreferences.getInstance();
+    final expiresAt = DateTime.now().millisecondsSinceEpoch + (expiresIn * 1000);
+
+    await prefs.setString(_accessTokenKey, accessToken);
+    if (refreshToken != null) {
+      await prefs.setString(_refreshTokenKey, refreshToken);
+    }
+    await prefs.setInt(_expiresAtKey, expiresAt);
+  }
+
+  Future<bool> refreshAccessToken() async {
+    debugPrint("refreshAccessToken");
+    final prefs = await SharedPreferences.getInstance();
+    final refreshToken = prefs.getString(_refreshTokenKey);
+
+    if (refreshToken == null) return false;
+
+    try {
+      final res = await http.post(
+        Uri.parse('https://api.intra.42.fr/oauth/token'),
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: {
+          'grant_type': 'refresh_token',
+          'refresh_token': refreshToken,
+          'client_id': widget.clientId,
+          'client_secret': widget.clientSecret,
+        },
+      );
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        await saveTokens(
+          data['access_token'],
+          data['refresh_token'] ?? refreshToken,
+          data['expires_in'] ?? 7200,
+        );
+        return true;
+      }
+    } catch (e) {
+      debugPrint("Refresh token error: $e");
+    }
+
+    await prefs.clear();
+    return false;
   }
 
   Future<Map<String, dynamic>> _fetchMe(String accessToken) async {

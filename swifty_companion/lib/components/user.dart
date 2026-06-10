@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../types/Projects.dart';
 
 class UserPage extends StatefulWidget {
   const UserPage({
@@ -20,6 +22,7 @@ class UserPage extends StatefulWidget {
 class _UserPageState extends State<UserPage> {
   late Map<String, dynamic> userData;
   late List<dynamic> skills;
+  late List<Project> projectsList;
   late String level;
   late String campus;
   late String token;
@@ -30,7 +33,8 @@ class _UserPageState extends State<UserPage> {
   void initState() {
     super.initState();
     skills = [];
-    level = "yy";
+    projectsList = [];
+    level = "0.0";
     campus = "";
     token = widget.token;
     userData = Map<String, dynamic>.from(widget.userData);
@@ -57,6 +61,14 @@ class _UserPageState extends State<UserPage> {
         },
       );
 
+
+      final response = await http.get(
+        Uri.parse('https://api.intra.42.fr/v2/users/$userId/projects_users?page[size]=100'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+
       // debugPrint("Status Code: ${res.statusCode}");
 
       if (res.statusCode == 200) {
@@ -67,6 +79,7 @@ class _UserPageState extends State<UserPage> {
         List<dynamic> extractedSkills = [];
         String levelRes = "x";
         String campusName = "";
+        List<Project> projects = [];
         try {
           final cursusUsers = fetchedData['cursus_users'] as List<dynamic>? ?? [];
           final filteredCursus = cursusUsers.where((cursus) {
@@ -97,6 +110,18 @@ class _UserPageState extends State<UserPage> {
               extractedSkills = lastCursus['skills'] as List<dynamic>? ?? [];
             }
           }
+
+          final List<dynamic> projectsJson = json.decode(response.body);
+
+
+        projects = projectsJson
+                .map((project) => Project.fromJson(project as Map<String, dynamic>))
+                .toList();
+
+          projects.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+          debugPrint("projectsList: ${projects}");
+
         } catch (e) {
           debugPrint("Error skills: $e");
         }
@@ -107,6 +132,7 @@ class _UserPageState extends State<UserPage> {
           level = levelRes;
           campus = campusName;
           errorMessage = '';
+          projectsList = projects;
         });
       } else {
         setState(() {
@@ -132,6 +158,9 @@ class _UserPageState extends State<UserPage> {
     final phone = userData['phone'] as String? ?? 'Not provided';
     final location = userData['location'] as String? ?? 'No location';
     final correctionPoint = userData['correction_point'] ?? 0;
+    final int whole = double.parse(level).floor();
+    final String decimal = (double.parse(level) % 1).toStringAsFixed(2).substring(2);
+
 
     if (isLoading) {
       return Scaffold(
@@ -197,7 +226,7 @@ class _UserPageState extends State<UserPage> {
             _buildInfoRow(
               Icons.flag,
               "Level",
-              "${level ?? 'N/A'}",
+              '${whole} - ${decimal}%',
             ),
 
             const SizedBox(height: 24),
@@ -221,7 +250,22 @@ class _UserPageState extends State<UserPage> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
-            _buildSkillsContent()
+            _buildSkillsContent(),
+
+
+            const SizedBox(height: 24),
+            const Text(
+              "Projects",
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: 1.2,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            _buildProjectsContent(),
           ],
         ),
       ),
@@ -240,7 +284,6 @@ class _UserPageState extends State<UserPage> {
   }
 
   Widget _buildSkillsContent() {
-
     if (skills.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(8.0),
@@ -266,7 +309,7 @@ class _UserPageState extends State<UserPage> {
 
     return Container(
       padding: const EdgeInsets.all(12),
-      width: 160,
+      // width: 160,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.white.withOpacity(0.3)),
@@ -320,4 +363,31 @@ class _UserPageState extends State<UserPage> {
       ),
     );
   }
+
+	Widget _buildProjectsContent() {
+
+    if (projectsList.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(8.0),
+        child: Text("No skills availablllllle"),
+      );
+    }
+
+		return Card(
+			color: Colors.white.withOpacity(0.1),
+			child: ListView.builder(
+				padding: const EdgeInsets.all(5),
+				shrinkWrap: true,
+				physics: NeverScrollableScrollPhysics(),
+				itemCount: projectsList.length,
+				itemBuilder: (context, index) {
+					final project = projectsList[index];
+					return ListTile(
+            title: Text(project.name, style: TextStyle(color: (project.finalMark ?? 0) > 100 ? Colors.green : Colors.white,),),
+						subtitle: Text('${project.status == "finished" ? project.finalMark : project.status}       ${project.createdAt}', style: TextStyle(color: Colors.white70)),
+						leading: Icon(Icons.folder, color: (project.finalMark ?? 0) > 100 ? Colors.green : Colors.grey),);
+				},
+			),
+		);
+	}
 }

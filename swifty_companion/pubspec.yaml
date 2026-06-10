@@ -28,6 +28,7 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  shared_preferences: ^2.3.0
   flutter_dotenv: ^6.0.1
   flutter_cors_image: ^0.3.13
   http: ^1.2.0

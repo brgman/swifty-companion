@@ -52,6 +52,7 @@ class _MainPageState extends State<MainPage> {
     if (username.isEmpty) return;
 
   try {
+    refreshAccessToken()
     final res = await http.get(
       Uri.parse('https://api.intra.42.fr/v2/users?filter[login]=$username'),
       headers: {
