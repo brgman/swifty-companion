@@ -61,7 +61,7 @@ class _SearchWidgetState extends State<SearchWidget> {
             child: TextField(
               controller: widget.controller,
               decoration: const InputDecoration(
-                hintText: "abergman",
+                // hintText: "abergman",
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.search),
               ),
