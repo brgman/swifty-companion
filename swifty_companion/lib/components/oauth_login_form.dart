@@ -51,7 +51,7 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
     if (kIsWeb) {
       _checkForCallbackInUrl();   // Check if we came back with ?code=...
     }
-    tryAutoLogin();
+    // tryAutoLogin();
   }
 
   Future<void> tryAutoLogin() async {
@@ -298,7 +298,6 @@ class _OAuthLoginFormState extends State<OAuthLoginForm> {
         ),
         ),
         
-
         if (_status != null) ...[
           const SizedBox(height: 16),
           Text(

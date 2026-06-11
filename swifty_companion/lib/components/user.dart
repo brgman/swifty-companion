@@ -47,8 +47,8 @@ class _UserPageState extends State<UserPage> {
     });
 
     try {
-      final res = await widget.apiClient.get('/users/$userId');
-      final projectsRes = await widget.apiClient.get('/users/$userId/projects_users?page[size]=100');
+      final res = await widget.apiClient.get('/users/$userId', 3);
+      final projectsRes = await widget.apiClient.get('/users/$userId/projects_users?page[size]=100', 3);
 
       if (res.statusCode == 200) {
         final fetchedData = json.decode(res.body) as Map<String, dynamic>;

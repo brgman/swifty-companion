@@ -39,7 +39,7 @@ class _MainPageState extends State<MainPage> {
   late ApiClient apiClient;
   bool isLoggedIn = false;
 
-  final TextEditingController _controller = TextEditingController();
+  final SearchController _controller = SearchController();
 
   @override
   void dispose() {
@@ -52,7 +52,7 @@ class _MainPageState extends State<MainPage> {
     if (username.isEmpty) return;
 
     try {
-      final res = await apiClient.get('/users?filter[login]=$username');
+      final res = await apiClient.get('/users?filter[login]=$username', 3);
 
       if (res.statusCode >= 300) {
         throw Exception('Failed to fetch user: ${res.statusCode}');

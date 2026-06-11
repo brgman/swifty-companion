@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 
 class ApiClient {
   static const String _accessTokenKey = 'access_token';
@@ -19,11 +20,26 @@ class ApiClient {
   }
 
   Future<bool> _refreshIfNeeded() async {
+    final now = DateTime.now();
+
     final prefs = await SharedPreferences.getInstance();
+    final currentToken = await _getAccessToken();
     final expiresAt = prefs.getInt(_expiresAtKey) ?? 0;
+    final expiresAtDate = DateTime.fromMillisecondsSinceEpoch(expiresAt);
+    final timeNow = DateTime.now().millisecondsSinceEpoch;
+    final intervalForUpdate = 8000000; // ms
+    final diffMinutes = expiresAtDate.difference(now).inMinutes;
+     final updateAtDate = DateTime.fromMillisecondsSinceEpoch(expiresAt - intervalForUpdate);
+
+    debugPrint("refreshIfNeeded: current token: ${currentToken}");
+    debugPrint("refreshIfNeeded: time now: ${DateFormat('dd MMMM yyyy HH:mm:ss.SSS').format(now)}");
+    debugPrint("refreshIfNeeded: expires at: ${DateFormat('dd MMMM yyyy HH:mm:ss.SSS').format(expiresAtDate)}");
+    debugPrint("refreshIfNeeded: update at: ${DateFormat('dd MMMM yyyy HH:mm:ss.SSS').format(updateAtDate)}");
+    debugPrint("refreshIfNeeded: real diff (mins): ${diffMinutes}");
 
     // OK
-    if (DateTime.now().millisecondsSinceEpoch < expiresAt) {
+    if (timeNow <= expiresAt - intervalForUpdate) {
+      debugPrint("OK: TOKEN IS VALID");
       return true;
     }
 
@@ -52,6 +68,7 @@ class ApiClient {
 
         if (newAccess != null) {
           final newExpires = DateTime.now().millisecondsSinceEpoch + (expiresIn * 1000);
+          debugPrint("refreshIfNeeded:     new token: ${newAccess}");
 
           await prefs.setString(_accessTokenKey, newAccess);
           if (newRefresh != null) {
@@ -69,7 +86,7 @@ class ApiClient {
     return false;
   }
 
-  Future<http.Response> get(String endpoint) async {
+  Future<http.Response> get(String endpoint, int retries) async {
     if (!await _refreshIfNeeded()) {
       throw Exception('Token expired and refresh failed. Please login again.');
     }
@@ -79,9 +96,25 @@ class ApiClient {
       throw Exception('No token available');
     }
 
-    return http.get(
+    final res = await http.get(
       Uri.parse('https://api.intra.42.fr/v2$endpoint'),
       headers: {'Authorization': 'Bearer $token'},
     );
+
+    if (res.statusCode == 429 && retries > 0) {
+      debugPrint("ERROR 429: retry no: ${retries} to the endpoint: ${endpoint}");
+
+      final retryAfter = int.tryParse(
+        res.headers['retry-after'] ?? '',
+      );
+
+      final waitTime = Duration(
+        seconds: retryAfter ?? 5,
+      );
+
+      await Future.delayed(waitTime);
+      return get(endpoint, retries - 1);
+    }
+    return res;
   }
 }
